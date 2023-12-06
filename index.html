@@ -1,0 +1,120 @@
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Chat App</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+::-webkit-scrollbar{
+    display: none;
+}
+.chat-container{
+    padding: 20px;
+    height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.user-input{
+    height: 10vh;
+    padding: 10px;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: flex;
+}
+.user-input input[type='text']{
+    padding: 10px;
+    width: 70%;
+}
+.user-input button {
+    padding: 10px;
+    width: 30%;
+}
+
+</style>
+</head>
+<body>
+<div class="chat-wrapper">
+    <div class="chat-container" id="chat-container">
+        <div id="ins" style="text-align: center;color:dimgray;"><small>To set your name, type "Name(yourname)".</small></div>
+    </div>
+    <div class="user-input">
+        <input type="text" id="message" placeholder="Send a message..">
+        <button style="display: flex;align-items: center;justify-content: center;" onclick="submitMessage(document.getElementById('message').value); document.getElementById('message').value = '';"> SEND &nbsp<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
+            <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+          </svg></button>
+    </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+var socket = io();
+let container = document.getElementById("chat-container");
+var scrolled = false;
+var myName;
+
+
+function submitMessage(msg){
+    if (document.getElementById("ins").style.display != 'none') {
+        document.getElementById("ins").style.display = 'none';
+    }
+
+    if (msg.includes("Name")) {
+        var regex = /Name\(([^)]+)\)/;
+        var match = msg.match(regex);
+
+        if (match) {
+            let userName = match[1];
+            myName = userName;
+            socket.emit("registerName", userName);
+        }
+    } else {
+        if (myName != null) {
+            if (msg != '') {
+                socket.emit('message', msg);
+                container.insertAdjacentHTML("beforeend", `
+                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">(${myName}) ${msg}</div></div>`);
+            }
+        } else {
+            if (msg != '') {
+                socket.emit('message', msg);
+                container.insertAdjacentHTML("beforeend", `
+                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${msg}</div></div>`);
+            }
+        }
+        
+        container.scrollTop = container.scrollHeight;
+    }
+
+    
+}
+socket.on("broadcast", (name) => {
+    if (document.getElementById("ins").style.display != 'none') {
+        document.getElementById("ins").style.display = 'none';
+    }
+
+    container.insertAdjacentHTML("beforeend", `
+    <div style="text-align: center;color:dimgray;"><small>A user set his/her name to ${name}.</small></div>
+    `);
+})
+
+socket.on("other", (reply) => {
+    if (document.getElementById("ins").style.display != 'none') {
+        document.getElementById("ins").style.display = 'none';
+    }
+
+    container.insertAdjacentHTML("beforeend", `
+    <div style="display:flex;justify-content:start;"><div style="background:#ECF3FF;color:dimgray;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">(${reply.name}) ${reply.message}</div></div>`);
+    
+    container.scrollTop = container.scrollHeight;
+})
+
+</script>
+</body>
+</html>
