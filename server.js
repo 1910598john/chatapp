@@ -26,7 +26,14 @@ io.on('connection', (socket) => {
     }
    
     socket.broadcast.emit('other', data);
-    
+  })
+
+  socket.on("answer", (answer) => {
+    let data = {
+      "message" : answer,
+      "name" : socket.username,
+    }
+    socket.emit("answered", data);
   })
 
   socket.on("registerName", (name) => {

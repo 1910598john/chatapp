@@ -43,7 +43,7 @@
 <body>
 <div class="chat-wrapper">
     <div class="chat-container" id="chat-container">
-        <div id="ins" style="text-align: center;color:dimgray;"><small>To set your name, type "Name(yourname)".</small></div>
+        <div id="ins" style="text-align: center;color:dimgray;"><small>To set your name type "Name(yourname)".</small></div>
     </div>
     <div class="user-input">
         <input type="text" id="message" placeholder="Send a message..">
@@ -59,7 +59,6 @@ let container = document.getElementById("chat-container");
 var scrolled = false;
 var myName;
 
-
 function submitMessage(msg){
     if (document.getElementById("ins").style.display != 'none') {
         document.getElementById("ins").style.display = 'none';
@@ -74,7 +73,18 @@ function submitMessage(msg){
             myName = userName;
             socket.emit("registerName", userName);
         }
-    } else {
+    } else if (msg.includes("Start game")) {
+        StartGame();
+    } else if (msg.includes("Answer")) {
+        var regex = /Answer\(([^)]+)\)/;
+        var match = msg.match(regex);
+
+        if (match) {
+            let answer = match[1];
+            socket.emit("answer", userName);
+        }
+    }
+     else {
         if (myName != null) {
             if (msg != '') {
                 socket.emit('message', msg);
@@ -91,9 +101,8 @@ function submitMessage(msg){
         
         container.scrollTop = container.scrollHeight;
     }
-
-    
 }
+
 socket.on("broadcast", (name) => {
     if (document.getElementById("ins").style.display != 'none') {
         document.getElementById("ins").style.display = 'none';
@@ -115,6 +124,26 @@ socket.on("other", (reply) => {
     container.scrollTop = container.scrollHeight;
 })
 
+function StartGame(){
+    let num2guess, min, max;
+    min = Math.round(Math.random() * 100);
+    let tempMin = min;
+    for (let i = 0; i < 100; i++) {
+        tempMin += 1;
+    }
+    max = tempMin;
+    num2guess = Math.round(Math.random() * max);
+
+    container.insertAdjacentHTML("beforebegin", `
+        <div style="position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">Guess a number between ${min} and ${max}.<br>To answer type Answer(yourAnswer).</div>
+    `);
+
+    socket.on("answered", (data) => {
+        container.insertAdjacentHTML("beforebegin", `
+            <div style="position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data.name} answered ${data.message}.</div>
+        `);
+    })
+}
 </script>
 </body>
 </html>
