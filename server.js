@@ -27,6 +27,10 @@ io.on('connection', (socket) => {
    
     socket.broadcast.emit('other', data);
   })
+  
+  socket.on("gameStarted", (userName) => {
+      socket.broadcast.emit("gameStarted", socket.username);
+  })
 
   socket.on("answer", (answer) => {
     let data = {

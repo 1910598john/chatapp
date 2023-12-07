@@ -81,7 +81,7 @@ function submitMessage(msg){
 
         if (match) {
             let answer = match[1];
-            socket.emit("answer", userName);
+            socket.emit("answer", answer);
         }
     }
      else {
@@ -89,7 +89,7 @@ function submitMessage(msg){
             if (msg != '') {
                 socket.emit('message', msg);
                 container.insertAdjacentHTML("beforeend", `
-                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">(${myName}) ${msg}</div></div>`);
+                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${msg}</div></div>`);
             }
         } else {
             if (msg != '') {
@@ -128,19 +128,29 @@ function StartGame(){
     let num2guess, min, max;
     min = Math.round(Math.random() * 100);
     let tempMin = min;
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < Math.round(Math.random() * 100); i++) {
         tempMin += 1;
     }
     max = tempMin;
     num2guess = Math.round(Math.random() * max);
+    
+    socket.emit("gameStarted", myName);
 
-    container.insertAdjacentHTML("beforebegin", `
+    
+    
+    socket.on("gameStarted", (data) => {
+        container.insertAdjacentHTML("beforebegin", `
+            <div style="padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data} started a game.</div>
+        `);
+        
+        container.insertAdjacentHTML("beforebegin", `
         <div style="position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">Guess a number between ${min} and ${max}.<br>To answer type Answer(yourAnswer).</div>
     `);
+    })
 
     socket.on("answered", (data) => {
         container.insertAdjacentHTML("beforebegin", `
-            <div style="position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data.name} answered ${data.message}.</div>
+            <div style="padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data.name} answered ${data.message}.</div>
         `);
     })
 }
