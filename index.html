@@ -119,7 +119,7 @@ socket.on("other", (reply) => {
     }
 
     container.insertAdjacentHTML("beforeend", `
-    <div style="display:flex;justify-content:start;"><div style="background:#ECF3FF;color:dimgray;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">(${reply.name}) ${reply.message}</div></div>`);
+    <div style="display:flex;justify-content:start;"><div style="background:#ECF3FF;color:dimgray;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${reply.message}</div></div>`);
     
     container.scrollTop = container.scrollHeight;
 })
