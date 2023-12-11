@@ -32,6 +32,7 @@ io.on('connection', (socket) => {
   })
   
   socket.on("gameStarted", (data) => {
+    console.log(data);
       socket.broadcast.emit("gameStarted", data);
 
   })
@@ -41,12 +42,15 @@ io.on('connection', (socket) => {
       "message" : answer,
       "name" : socket.username,
     }
+    if (socket.username == null || socket.username == undefined || socket.username == "") {
+      socket.username = "User";
+    }
+    console.log(socket.username + " " + answer);
     socket.emit("answered", data);
   })
 
   socket.on("registerName", (name) => {
     socket.username = name;
-    console.log(socket.username);
     socket.broadcast.emit("broadcast", name);
   })
 

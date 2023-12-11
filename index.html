@@ -113,13 +113,13 @@ function submitMessage(msg){
             if (msg != '') {
                 socket.emit('message', msg);
                 container.insertAdjacentHTML("beforeend", `
-                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${msg}</div></div>`);
+                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:70%;overflow-wrap: break-word;">${msg}</div></div>`);
             }
         } else {
             if (msg != '') {
                 socket.emit('message', msg);
                 container.insertAdjacentHTML("beforeend", `
-                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${msg}</div></div>`);
+                <div style="display:flex;justify-content:end;"><div style="background:#3578E5;color:#ECF3FF;padding:10px;border-radius:10px;margin:2px 0;max-width:70%;overflow-wrap: break-word;">${msg}</div></div>`);
             }
         }
         
@@ -145,7 +145,7 @@ socket.on("other", (reply) => {
     }
 
     container.insertAdjacentHTML("beforeend", `
-    <div style="display:flex;justify-content:start;"><div style="background:#ECF3FF;color:dimgray;padding:10px;border-radius:10px;margin:2px 0;max-width:50%;overflow-wrap: break-word;">${reply.message}</div></div>`);
+    <div style="display:flex;justify-content:start;"><div style="background:#ECF3FF;color:dimgray;padding:10px;border-radius:10px;margin:2px 0;max-width:70%;overflow-wrap: break-word;">${reply.message}</div></div>`);
     
     container.scrollTop = container.scrollHeight;
 })
@@ -175,10 +175,8 @@ socket.on("connected", () => {
 socket.on("gameStarted", (data) => {
     gameStarted = true;
     let name, min, max;
+    name = data.name;
 
-    if (data.name == null) {
-        name = "User";
-    }
     min = data.min;
     max = data.max;
     gameNumberToGuess = data.guessNum;
@@ -196,12 +194,10 @@ socket.on("gameStarted", (data) => {
 
 socket.on("answered", (data) => {
     let txt = "(incorrect)";
-    let name;
-    if (data.name == "" || data.name == "undefined" || data.name == null) {
-        name = "User";
-    } else {
-        name = data.name;
-    }
+    let name = data.name;
+
+    console.log(data);
+
     if (gameNumberToGuess == parseInt(data.message)) {
         guessed = true;
         txt = "(correct)";
@@ -215,18 +211,29 @@ socket.on("answered", (data) => {
 
 function StartGame(){
     gameStarted = true;
-
-    let num2guess, min, max;
+    let lst = [];
+    let num2guess, min, max, name;
     min = Math.round(Math.random() * 100);
     let tempMin = min;
-    for (let i = 0; i < Math.round(Math.random() * 100); i++) {
+    for (let i = 0; i < Math.round(Math.random() * 100) + 10; i++) {
         tempMin += 1;
     }
     max = tempMin;
-    num2guess = Math.round(Math.random() * max);
+
+    let randomNum = Math.round(Math.random() * (lst.length - 1));
+    num2guess = lst[randomNum];
+
+    gameNumberToGuess = num2guess;
+
+
+    if (myName == null || myName == ""){
+        name = "User";
+    } else {
+        name = myName;
+    }
 
     let data = {
-        "name": myName,
+        "name": name,
         "guessNum":num2guess,
         "min":min,
         "max":max,
