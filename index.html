@@ -16,13 +16,16 @@
 }
 .chat-container{
     padding: 20px;
-    height: 90vh;
+    height: 90%;
+    width: 100%;
+    position: absolute;
+    top:0;
+    left: 0;
     overflow-y: auto;
     overflow-x: hidden;
 }
 .user-input{
-    height: 10vh;
-    padding: 10px;
+    height: 10%;
     width: 100%;
     position: absolute;
     bottom: 0;
@@ -31,11 +34,23 @@
 }
 .user-input input[type='text']{
     padding: 10px;
+    height: 100%;
     width: 70%;
+    font-size: 15px;
+    border: 2px solid gray;
+    color: gray;
+}
+.user-input svg{
+    transform: rotate(45deg);
 }
 .user-input button {
+    border: none;
+    height: 100%;
     padding: 10px;
     width: 30%;
+    color: #fff;
+    font-size: 15px;
+    background: #3578E5;
 }
 
 </style>
@@ -47,7 +62,7 @@
     </div>
     <div class="user-input">
         <input type="text" id="message" placeholder="Send a message..">
-        <button style="display: flex;align-items: center;justify-content: center;" onclick="submitMessage(document.getElementById('message').value); document.getElementById('message').value = '';"> SEND &nbsp<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
+        <button style="display: flex;align-items: center;justify-content: center;" onclick="submitMessage(document.getElementById('message').value); document.getElementById('message').value = '';"> SEND &nbsp<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#fff" class="bi bi-send" viewBox="0 0 16 16">
             <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
           </svg></button>
     </div>
@@ -58,6 +73,9 @@ var socket = io();
 let container = document.getElementById("chat-container");
 var scrolled = false;
 var myName;
+var gameNumberToGuess;
+var gameStarted = false;
+var guessed = false;
 
 function submitMessage(msg){
     if (document.getElementById("ins").style.display != 'none') {
@@ -74,7 +92,13 @@ function submitMessage(msg){
             socket.emit("registerName", userName);
         }
     } else if (msg.includes("Start game")) {
-        StartGame();
+        if (!gameStarted) {
+            StartGame();
+        } else {
+            container.insertAdjacentHTML("beforeend", `
+            <div style="text-align: center;color:dimgray;margin:10px 0;"><small>Number guessing has already been started.</small></div>
+            `);
+        }
     } else if (msg.includes("Answer")) {
         var regex = /Answer\(([^)]+)\)/;
         var match = msg.match(regex);
@@ -109,8 +133,10 @@ socket.on("broadcast", (name) => {
     }
 
     container.insertAdjacentHTML("beforeend", `
-    <div style="text-align: center;color:dimgray;"><small>A user set his/her name to ${name}.</small></div>
+    <div style="text-align: center;color:dimgray;margin:10px 0;"><small>A user set his/her name to ${name}.</small></div>
     `);
+
+    container.scrollTop = container.scrollHeight;
 })
 
 socket.on("other", (reply) => {
@@ -124,7 +150,72 @@ socket.on("other", (reply) => {
     container.scrollTop = container.scrollHeight;
 })
 
+socket.on("disconnected", (user) => {
+    if (document.getElementById("ins").style.display != 'none') {
+        document.getElementById("ins").style.display = 'none';
+    }
+    container.insertAdjacentHTML("beforeend", `
+        <div style="text-align: center;color:dimgray;margin:10px 0;"><small>${user} disconnected.</small></div>
+    `);
+
+    container.scrollTop = container.scrollHeight;
+})
+
+socket.on("connected", () => {
+    if (document.getElementById("ins").style.display != 'none') {
+        document.getElementById("ins").style.display = 'none';
+    }
+    container.insertAdjacentHTML("beforeend", `
+        <div style="text-align: center;color:dimgray;margin:10px 0;"><small>User connected.</small></div>
+    `);
+
+    container.scrollTop = container.scrollHeight;
+})
+
+socket.on("gameStarted", (data) => {
+    gameStarted = true;
+    let name, min, max;
+
+    if (data.name == null) {
+        name = "User";
+    }
+    min = data.min;
+    max = data.max;
+    gameNumberToGuess = data.guessNum;
+
+    container.insertAdjacentHTML("beforeend", `
+        <div style="text-align: center;color:dimgray;margin:10px 0;"><small>${name} started a game.</small></div>
+    `);
+    
+    container.insertAdjacentHTML("beforeend", `
+        <div style="z-index:2;position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">Guess a number between ${min} and ${max}.<br>To answer type Answer(yourAnswer).</div>
+    `);
+
+    container.scrollTop = container.scrollHeight;
+})
+
+socket.on("answered", (data) => {
+    let txt = "(incorrect)";
+    let name;
+    if (data.name == "" || data.name == "undefined" || data.name == null) {
+        name = "User";
+    } else {
+        name = data.name;
+    }
+    if (gameNumberToGuess == parseInt(data.message)) {
+        guessed = true;
+        txt = "(correct)";
+    }
+    container.insertAdjacentHTML("beforeend", `
+         <div style="text-align: center;color:dimgray;margin:10px 0;"><small>${name} answered ${data.message} ${txt}.</small></div>
+    `);
+
+    container.scrollTop = container.scrollHeight;
+})
+
 function StartGame(){
+    gameStarted = true;
+
     let num2guess, min, max;
     min = Math.round(Math.random() * 100);
     let tempMin = min;
@@ -133,26 +224,25 @@ function StartGame(){
     }
     max = tempMin;
     num2guess = Math.round(Math.random() * max);
-    
-    socket.emit("gameStarted", myName);
 
+    let data = {
+        "name": myName,
+        "guessNum":num2guess,
+        "min":min,
+        "max":max,
+    }
     
-    
-    socket.on("gameStarted", (data) => {
-        container.insertAdjacentHTML("beforebegin", `
-            <div style="padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data} started a game.</div>
-        `);
-        
-        container.insertAdjacentHTML("beforebegin", `
-        <div style="position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">Guess a number between ${min} and ${max}.<br>To answer type Answer(yourAnswer).</div>
+    socket.emit("gameStarted", data);
+
+    container.insertAdjacentHTML("beforeend", `
+        <div style="text-align: center;color:dimgray;margin:10px 0;"><small>You started a game.</small></div>
     `);
-    })
+    
+    container.insertAdjacentHTML("beforeend", `
+        <div style="z-index:2;position:sticky:top:0;left:0;padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">Guess a number between ${min} and ${max}.<br>To answer type Answer(yourAnswer).</div>
+    `);
 
-    socket.on("answered", (data) => {
-        container.insertAdjacentHTML("beforebegin", `
-            <div style="padding:10px;margin:3px 0;background:#ECF3FF;color:dimgray;text-align:center;">${data.name} answered ${data.message}.</div>
-        `);
-    })
+    container.scrollTop = container.scrollHeight;
 }
 </script>
 </body>

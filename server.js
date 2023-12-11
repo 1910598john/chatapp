@@ -9,7 +9,10 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
+
+
 io.on('connection', (socket) => {
+  socket.broadcast.emit("connected");
 
   socket.on('message', (msg) => {
     let data;
@@ -28,8 +31,9 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('other', data);
   })
   
-  socket.on("gameStarted", (userName) => {
-      socket.broadcast.emit("gameStarted", socket.username);
+  socket.on("gameStarted", (data) => {
+      socket.broadcast.emit("gameStarted", data);
+
   })
 
   socket.on("answer", (answer) => {
@@ -44,6 +48,16 @@ io.on('connection', (socket) => {
     socket.username = name;
     console.log(socket.username);
     socket.broadcast.emit("broadcast", name);
+  })
+
+  socket.on("disconnect", () => {
+    let name;
+    if (socket.username == null) {
+      name = "User";
+    } else {
+      name = socket.username;
+    }
+    socket.broadcast.emit("disconnected", name);
   })
 });
 
